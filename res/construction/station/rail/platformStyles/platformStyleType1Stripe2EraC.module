@@ -1,0 +1,45 @@
+local constants = require("ouest_freestyle_station.constants")
+function data()
+    return {
+        availability = {
+            yearFrom = constants.eras.era_c.startYear,
+            yearTo = 0
+        },
+        category = {
+            categories = { "platform-era-height-style", },
+        },
+        cost = {
+            price = 0,
+        },
+        description = {
+            name = _("PlatformStyleType1Stripe2EraCName"),
+            -- description = _("PlatformStyleType1EraCDesc"),
+            icon = "ui/PlatformStyleType1Stripe2EraC.tga"
+        },
+        metadata = { },
+        order = {
+            value = 12,
+        },
+        type = constants.passengersPlatformStyleModuleType,
+        updateFn = function(result, slotTransf, tag, slotId, addModelFn, params, updateScriptParams)
+            -- local nTerminal, nTrackEdge, baseId = result.demangleId(slotId)
+            -- if not nTerminal or not baseId then return end
+
+            -- result.models[#result.models + 1] = {
+            -- 	id = 'lollo_freestyle_train_station/icon/lilac.mdl',
+            -- 	slotId = slotId,
+            -- 	transf = slotTransf,
+            -- 	tag = tag
+            -- }
+        end,
+
+        getModelsFn = function(params)
+            return {
+                {
+                    id = 'icon/quai.mdl',
+                    transf = constants.idTransf,
+                }
+            }
+        end
+    }
+end
