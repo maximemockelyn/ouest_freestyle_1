@@ -1,6 +1,6 @@
-local constants = require('ouest_train_station.constants')
-local logger = require('ouest_train_station.logger')
-local stringUtils = require('ouest_train_station.stringUtils')
+local constants = require('ouest_freestyle_station.constants')
+local logger = require('ouest_freestyle_station.logger')
+local stringUtils = require('ouest_freestyle_station.stringUtils')
 
 local helpers = {
     addCategory = function(trackType, category)
