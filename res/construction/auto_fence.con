@@ -1,0 +1,259 @@
+function data()
+    local arrayUtils = require('ouest_freestyle_station.arrayUtils')
+    local constants = require('ouest_freestyle_station.constants')
+    local fenceModelHelper = require('ouest_freestyle_station.fenceModelHelper')
+    local logger = require('ouest_freestyle_station.logger')
+    local transfUtils = require('ouest_freestyle_station.transfUtils')
+
+    local function addGround(transf, yShift, zShiftDefaultPlatformHeight, result)
+        local zShift = math.max(zShiftDefaultPlatformHeight, 0)
+        local faceTransformed = transfUtils.getFaceTransformed_FAST(
+                transf,
+                {
+                    {-0.5, -0.2, _zShift, 1.0},
+                    {0.5, -0.2, _zShift, 1.0},
+                    {0.5, 0.5 + yShift, _zShift, 1.0}, -- smaller y integrates better with steep slopes but the earth might come into the station
+                    {-0.5, 0.5 + yShift, _zShift, 1.0},
+                }
+        )
+
+        table.insert(result.groundFaces, {
+            face = faceTransformed,
+            loop = true,
+            modes = {
+                {
+                    type = 'FILL',
+                    key = 'shared/asphalt_01.gtex.lua',
+                }
+            }
+        })
+
+        table.insert(result.terrainAlignmentLists, {
+            face = {faceTransformed},
+            optional = true,
+            slopeHigh = 9.9,
+            slopeLow = 9.6,
+            type = "EQUAL"
+        })
+    end
+
+    local function addWall(transf, result, yShift, zShift, wallMainModelId, wallBaseModelId)
+        local transfShifted = transfUtils.getTransf_Shifted(transf, {0, yShift, zShift})
+        if wallMainModelId ~= nil then
+            table.insert(
+                    result.models,
+                    {
+                        id = wallMainModelId,
+                        transf = transfShifted
+                    }
+            )
+        end
+        if wallBaseModelId ~= nil then
+            table.insert(
+                    result.models,
+                    {
+                        id = wallBaseModelId,
+                        transf = transfShifted
+                    }
+            )
+        end
+    end
+
+    local function addWallBehind(transf, result, yShift, zShift, wallBehindModelId, wallBehindBaseModelId)
+        if wallBehindModelId == nil then return end
+
+        local wallBehindTransf_Shifted = transfUtils.getTransf_Shifted(transf, {0, yShift, zShift})
+        table.insert(
+                result.models,
+                {
+                    id = wallBehindModelId,
+                    transf = wallBehindTransf_Shifted
+                }
+        )
+        if wallBehindBaseModelId ~= nil then
+            table.insert(
+                    result.models,
+                    {
+                        id = wallBehindBaseModelId,
+                        transf = wallBehindTransf_Shifted
+                    }
+            )
+        end
+    end
+
+    return {
+        -- type = 'ASSET_DEFAULT',
+        type = 'ASSET_TRACK', -- this is not the same as snapping.rail below, coz it lowers the asset to the ground.
+        availability = {
+            yearFrom = -1,
+            yearTo = -1,
+        },
+        categories = { 'fence' },
+        description = {
+            name = _('FenceAssetsName'),
+            --description = _('FenceAssetsDesc'),
+            icon = 'ui/construction/fence_assets.tga',
+        },
+        order = 1110,
+        autoRemovable = false,
+        -- buildMode = 'MULTI',
+        skipCollision = true,
+        snapping = {
+            rail = true,
+            road = true,
+            water = false
+        },
+        params = {},
+        updateFn = function(params)
+            logger.print('auto_fence.updateFn firing, params =')
+            logger.debugPrint(arrayUtils.cloneDeepOmittingFields(params, {'state', 'transfs', 'transfs_ground', 'transfs_wallBehind'}, true))
+
+            local _initParams = function()
+                -- allow adding new params to old cons that did not have them
+                local defaults = fenceModelHelper.getDefaultIndexes()
+                params.ouestFenceAssets_doTerrain = params.ouestFenceAssets_doTerrain or defaults.ouestFenceAssets_doTerrain
+                params.ouestFenceAssets_model = params.ouestFenceAssets_model or defaults.ouestFenceAssets_model
+                params.ouestFenceAssets_wallEraPrefix = params.ouestFenceAssets_wallEraPrefix or defaults.ouestFenceAssets_wallEraPrefix
+                params.ouestFenceAssets_wallBehindOnBridges = params.ouestFenceAssets_wallBehindOnBridges or defaults.ouestFenceAssets_wallBehindOnBridges
+                params.ouestFenceAssets_wallBehindInTunnels = params.ouestFenceAssets_wallBehindInTunnels or defaults.ouestFenceAssets_wallBehindInTunnels
+                params.ouestFenceAssets_wallBehindModel = params.ouestFenceAssets_wallBehindModel or defaults.ouestFenceAssets_wallBehindModel
+                params.ouestFenceAssets_yShiftFine = params.ouestFenceAssets_yShiftFine or defaults.ouestFenceAssets_yShiftFine
+                params.ouestFenceAssets_zShift = params.ouestFenceAssets_zShift or defaults.ouestFenceAssets_zShift
+                params.transfs = params.transfs or {} -- obsolete, it was an early release, newer releases have transfs_ground instead
+                params.transfs_ground = params.transfs_ground or {}
+                params.transfs_wallBehind = params.transfs_wallBehind or {}
+            end
+            _initParams()
+
+            local result = {
+                colliders = {},
+                cost = 0,
+                edgeLists = {},
+                groundFaces = { -- dummy ground faces so this is treated as a proper construction, and the construction mover can adjust it
+                    {
+                        face = {
+                            {0.1, -0.1, 0.0, 1.0},
+                            {0.1, 0.1, 0.0, 1.0},
+                            {-0.1, 0.1, 0.0, 1.0},
+                            {-0.1, -0.1, 0.0, 1.0},
+                        },
+                        modes = {
+                            {
+                                type = 'FILL',
+                                key = 'shared/asphalt_01.gtex.lua' --'shared/gravel_03.gtex.lua'
+                            }
+                        }
+                    },
+                },
+                models = {
+                    -- {
+                    -- 	id = 'lollo_freestyle_train_station/icon/blue.mdl',
+                    --     transf = {1, 0, 0, 0,
+                    --         0, 1, 0, 0,
+                    --         0, 0, 1, 0,
+                    --         0, 0, 0, 1},
+                    -- },
+                },
+                terrainAlignmentLists = { {
+                                              type = 'EQUAL',
+                                              optional = true,
+                                              faces =  { }
+                                          } },
+            }
+
+            local wallMainModelId = fenceModelHelper.getModels()[params.ouestFenceAssets_model + 1].fileName
+            local wallMainModelId_Tunnel = fenceModelHelper.getModels(true)[params.ouestFenceAssets_model + 1].fileName
+
+            local wallBaseModelId = nil
+            if params.ouestFenceAssets_wallEraPrefix == 1 then
+                wallBaseModelId = 'trackWalls/era_a_wall_base_5m.mdl'
+            elseif params.ouestFenceAssets_wallEraPrefix == 2 then
+                wallBaseModelId = 'trackWalls/era_b_wall_base_5m.mdl'
+            elseif params.ouestFenceAssets_wallEraPrefix == 3 then
+                wallBaseModelId = 'trackWalls/era_c_wall_base_5m.mdl'
+            end
+
+            local wallBehindModelId = fenceModelHelper.getWallBehindModels()[params.ouestFenceAssets_wallBehindModel + 1].fileName
+
+            local wallBehindBaseModelId = nil
+            if wallBehindModelId ~= nil then
+                if params.ouestFenceAssets_wallEraPrefix == 1 then
+                    wallBehindBaseModelId = 'trackWalls/behind/era_a_wall_base_5m.mdl'
+                elseif params.ouestFenceAssets_wallEraPrefix == 2 then
+                    wallBehindBaseModelId = 'trackWalls/behind/era_b_wall_base_5m.mdl'
+                elseif params.ouestFenceAssets_wallEraPrefix == 3 then
+                    wallBehindBaseModelId = 'trackWalls/behind/era_c_wall_base_5m.mdl'
+                end
+            end
+
+            -- make sure something appears even if the models are all nil, so the costruction will not stay around as a ghost
+            logger.print('wallMainModelId =', wallMainModelId, 'wallBaseModelId =', wallBaseModelId, 'wallBehindModelId =', wallBehindModelId)
+            if not(wallMainModelId) and not(wallBaseModelId) and not(wallBehindModelId) then
+                result.labelText = {
+                    [0] = { _('wallWithNoModelsHere'), _('wallWithNoModelsHere') }
+                }
+                result.models = {{
+                                     id = constants.yellowMessageModelFileName,
+                                     transf = constants.idTransf
+                                 }}
+                return result
+            end
+            -- warn about outdated version
+            if not(params.transfs_ground) or not(params.transfs_wallBehind) or #params.transfs_ground == 0 or  #params.transfs_wallBehind == 0 then
+                result.labelText = {
+                    [0] = { _('OutdatedConstruction'), _('OutdatedConstruction') }
+                }
+                result.models = {{
+                                     id = constants.yellowMessageModelFileName,
+                                     transf = constants.idTransf
+                                 }}
+                return result
+            end
+
+            local isWallBehindInTunnels = params.ouestFenceAssets_wallBehindInTunnels == 1
+            local isWallBehindOnBridges = params.ouestFenceAssets_wallBehindOnBridges == 1
+            local isDoTerrain = params.ouestFenceAssets_doTerrain == 1
+
+            logger.print('fenceModelId =', wallMainModelId or 'NIL')
+            logger.print('wallBaseModelId =', wallBaseModelId or 'NIL')
+            logger.print('#params.transfs =', #params.transfs)
+            local _yStart = fenceModelHelper.getYShiftFineActualValues()[params.ouestFenceAssets_yShiftFine + 1]
+            local _zShift = fenceModelHelper.getZShiftActualValues()[params.ouestFenceAssets_zShift + 1]
+            local _zStart = ((wallBaseModelId == nil) and 0 or constants.defaultPlatformHeight) + _zShift
+            logger.print('_yStart =', _yStart or 'NIL')
+            logger.print('_zShift =', _zShift or 'NIL')
+            logger.print('_zStart =', _zStart or 'NIL')
+            -- the wall is 1.4m tall, constants.defaultPlatformHeight is 1.2m, so we sink all by 20cm. This is level with freestyle stations and looks good.
+            -- for _, transf in pairs(params.transfs) do -- compatibility with early releases, newer releases have no transfs
+            --     _addWall(transf, result, _yStart, _zStart, wallMainModelId, wallBaseModelId)
+            -- end
+            for _, transfData in pairs(params.transfs_ground) do
+                if not(transfData.hasLevelCrossing) then
+                    if transfData.groundBridgeTunnel_012 == 2 then -- tunnel
+                        addWall(transfData.transf, result, _yStart, _zStart, wallMainModelId_Tunnel, wallBaseModelId)
+                    else -- ground or bridge
+                        addWall(transfData.transf, result, _yStart, _zStart, wallMainModelId, wallBaseModelId)
+                    end
+                    if isDoTerrain and transfData.groundBridgeTunnel_012 == 0 then -- ground
+                        addGround(transfData.transf, _yStart, _zShift, result, wallBehindModelId)
+                    end
+                end
+            end
+            for _, transfData in pairs(params.transfs_wallBehind) do
+                if not(transfData.hasLevelCrossing) then
+                    if transfData.groundBridgeTunnel_012 == 0
+                            or (transfData.groundBridgeTunnel_012 == 1 and isWallBehindOnBridges)
+                            or (transfData.groundBridgeTunnel_012 == 2 and isWallBehindInTunnels) then
+                        _addWallBehind(transfData.transf, result, _yStart,_zStart, wallBehindModelId, wallBehindBaseModelId)
+                    end
+                end
+            end
+
+            return result
+        end,
+
+        upgradeFn = function(params)
+            return {}
+        end,
+    }
+end
