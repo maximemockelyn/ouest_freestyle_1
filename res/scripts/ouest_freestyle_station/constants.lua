@@ -44,23 +44,18 @@ local constants = {
             WAYPOINT_BULLDOZE_REQUESTED = 'WAYPOINT_BULLDOZE_REQUESTED',
         },
     },
-    stairsAndRampHeight = 1.2,
-    defaultPlatformHeight = 1.2,
+    stairsAndRampHeight = 0.55,
+    defaultPlatformHeight = 0.55,
     platformHeights = {
-        _0cm = {aboveRail = 0.0, aboveGround = 0.40, isOnlyCargo = true, moduleFileName = 'station/rail/ouest_train_station/platformHeights/platformHeight0.module',},
-        _25cm = {aboveRail = 0.25, aboveGround = 0.65, moduleFileName = 'station/rail/ouest_train_station/platformHeights/platformHeight25.module',},
-        _40cm = {aboveRail = 0.4, aboveGround = 0.8, moduleFileName = 'station/rail/ouest_train_station/platformHeights/platformHeight40.module',},
-        _60cm = {aboveRail = 0.6, aboveGround = 1.0, moduleFileName = 'station/rail/ouest_train_station/platformHeights/platformHeight60.module',},
-        -- default
-        _80cm = {aboveRail = 0.8, aboveGround = 1.2, moduleFileName = 'station/rail/ouest_train_station/platformHeights/platformHeight80.module',},
-        _100cm = {aboveRail = 1.0, aboveGround = 1.4, moduleFileName = 'station/rail/ouest_train_station/platformHeights/platformHeight100.module',},
-        _110cm = {aboveRail = 1.1, aboveGround = 1.5, moduleFileName = 'station/rail/ouest_train_station/platformHeights/platformHeight110.module',},
-        _125cm = {aboveRail = 1.25, aboveGround = 1.65, moduleFileName = 'station/rail/ouest_train_station/platformHeights/platformHeight125.module',},
+        _0cm = {aboveRail = 0.0, aboveGround = 0.40, isOnlyCargo = true, moduleFileName = 'station/rail/platformHeights/platformHeight0.module',},
+        _55cm = {aboveRail = 0.55, aboveGround = 0.95, moduleFileName = 'station/rail/platformHeights/platformHeight55.module',},
+        _76cm = {aboveRail = 0.76, aboveGround = 1.16, moduleFileName = 'station/rail/platformHeights/platformHeight76.module',},
+        _92cm = {aboveRail = 0.92, aboveGround = 1.32, moduleFileName = 'station/rail/platformHeights/platformHeight92.module',},
     },
     passengersPlatformStyles = {
-        era_c = {moduleFileName = 'station/rail/lollo_freestyle_train_station/platformStyles/platformStyleDBEraB.module'},
-        era_c_type_1_1_stripe = {moduleFileName = 'station/rail/ouest_train_station/platformStyles/platformType1Stripe1EraC.module'},
-        era_c_type_1_2_stripe = {moduleFileName = 'station/rail/ouest_train_station/platformStyles/platformType1Stripe2EraC.module'},
+        era_c = {moduleFileName = 'station/rail/platformStyles/platformStyleType1EraC.module'},
+        era_c_type_1_1_stripe = {moduleFileName = 'station/rail/platformStyles/platformType1Stripe1EraC.module'},
+        era_c_type_1_2_stripe = {moduleFileName = 'station/rail/platformStyles/platformType1Stripe2EraC.module'},
     },
 
     platformSideBitsZ = -0.10, -- a bit lower than the platform, to look good in bends
@@ -107,9 +102,9 @@ local constants = {
     era_b_groundFacesStrokeOuterKey = 'ouest_train_station/asphalt_01_high_priority.lua',
     era_c_groundFacesStrokeOuterKey = 'ouest_train_station/asphalt_02_high_priority.lua',
 
-    autoFenceConFileName = 'ouest_train_station/auto_fence.con',
-    platformMarkerConName = 'station/rail/ouest_train_station/platform_marker.con',
-    stationConFileName = 'station/rail/ouest_train_station/station.con',
+    autoFenceConFileName = 'auto_fence.con',
+    platformMarkerConName = 'station/rail/platform_marker.con',
+    stationConFileName = 'station/rail/station.con',
 
     edgeModuleFileNames = {
         fake = {
@@ -161,6 +156,8 @@ local constants = {
     openStairsUpRightModuleType = 'ouestTrainStationOpenStairsUpRight',
     openStairsExitModuleType = 'ouestTrainStationOpenStairsExit',
     trackTypeModuleType = 'ouestTrainStationTrackTypeModuleType',
+    platformWallModuleType = 'freestyleTrainStationWall',
+    trackWallModuleType = 'freestyleTrainStationTrackWall',
 
     era_c_flatPassengerStairsDownSmoothModelFileName = 'ouest_train_station/railroad/flatSides/passengers/stairs_down_smooth.mdl',
     era_c_flatPassengerStairsDownSteepModelFileName = 'ouest_train_station/railroad/flatSides/passengers/stairs_down_steep.mdl',
