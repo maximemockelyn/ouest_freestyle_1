@@ -52,6 +52,10 @@ function data()
             ["YShiftFine"] = "Affinage Y",
             ["ZRotation"] = "Rotation",
             ["ZDelta"] = "Pente",
+
+            ["AxialPassengerStairsSnappyEdgeName"] = "Entrée en bout de quai avec pont automatique",
+            ["FlatPassengerStairsSnappyEdgeName"] = "Entrée côté plate-forme avec pont automatique",
+            ["OpenStairsExitWithSnappyEdgeName_2m"] = "Entrée des escaliers avec pont automatique",
         }
     }
 end
