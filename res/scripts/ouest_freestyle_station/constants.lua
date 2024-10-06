@@ -108,9 +108,9 @@ local constants = {
 
     edgeModuleFileNames = {
         fake = {
-            axialArea = 'station/rail/ouest_train_station/axialAreas/flatPassengerStairsFakeEdge.module',
-            flatArea = 'station/rail/ouest_train_station/flatAreas/flatPassengerStairsFakeEdge.module',
-            openStairs = 'station/rail/ouest_train_station/openStairs/openStairsExitWithFakeEdge_2m_v2.module'
+            axialArea = 'station/rail/axialAreas/flatPassengerStairsFakeEdge.module',
+            flatArea = 'station/rail/flatAreas/flatPassengerStairsFakeEdge.module',
+            openStairs = 'station/rail/openStairs/openStairsExitWithFakeEdge_2m_v2.module'
         },
         plain = {
             axialArea = 'station/rail/ouest_train_station/axialAreas/flatPassengerStairsEdge.module',
