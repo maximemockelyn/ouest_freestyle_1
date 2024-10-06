@@ -1,0 +1,41 @@
+local _constants = require('lollo_freestyle_train_station.constants')
+local moduleHelpers = require('lollo_freestyle_train_station.moduleHelpers')
+local transfUtils = require('lollo_freestyle_train_station.transfUtils')
+
+function data()
+    return {
+        availability = {
+            yearFrom = -1,
+            yearTo = -1,
+        },
+        category = {
+            categories = { "passenger-road-access-axial", },
+        },
+        cost = {
+            price = 0,
+        },
+        description = {
+            name = _("AxialPassengerStairsSnappyEdgeName"),
+            --description = _("AxialPassengerStairsSnappyEdgeDesc"),
+            icon = "ui/exitWithSnappyEdge2m.tga"
+        },
+        metadata = { },
+        order = {
+            value = 11,
+        },
+        type = _constants.axialPassengerEdgeModuleType,
+        updateFn = function(result, slotTransf, tag, slotId, addModelFn, params, updateScriptParams)
+            return moduleHelpers.axialAreas.exitWithEdgeModule_updateFn(result, slotTransf, tag, slotId, addModelFn, params, updateScriptParams, false, true)
+        end,
+
+        getModelsFn = function(params)
+            return {
+                {
+                    id = 'open_stairs/bridge_chunk_2m.mdl',
+                    transf = _constants.idTransf,
+                },
+                moduleHelpers.axialAreas.getPreviewIcon(params)
+            }
+        end
+    }
+end
