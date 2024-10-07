@@ -1,0 +1,403 @@
+local _constants = require('ouest_freestyle_station.constants')
+-- local constructionutil = require "constructionutil"
+local logger = require('ouest_freestyle_station.logger')
+local moduleHelpers = require('ouest_freestyle_station.moduleHelpers')
+-- local modulesutil = require "modulesutil"
+local transfUtils = require('ouest_freestyle_station.transfUtils')
+local transfUtilsUG = require "transf"
+
+
+function data()
+
+return {
+	availability = {
+		yearFrom = -1,
+		yearTo = -1
+	},
+	category = {
+		-- categories = { "cargo", },
+	},
+	cost = {
+		price = 0,
+	},
+	description = {
+		name = _("Terminal"),
+		-- description = _("Terminal, can only be deleted, build this with the waypoints"),
+		icon = "ui/empty.tga"
+	},
+	metadata = { },
+	order = {
+		value = 1,
+	},
+	-- skipCollision = true,
+	type = _constants.passengerTerminalModuleType,
+	updateFn = function(result, slotTransf, tag, slotId, addModelFn, params, updateScriptParams)
+		local nTerminal, nTrackEdge, baseId = result.demangleId(slotId)
+		if not nTerminal or not baseId then return end
+
+		local _terminalData = params.terminals[nTerminal]
+		local _cpfs = _terminalData.centrePlatformsFineRelative
+
+		moduleHelpers.edges.addEdges(result, tag, params, nTerminal, _terminalData)
+		-- print('freestyleTrainStation result.edgeLists =') debugPrint(result.edgeLists)
+		moduleHelpers.platforms.addPlatform(result, tag, slotId, params, nTerminal, _terminalData)
+
+		local laneZ = result.laneZs[nTerminal]
+		-- start from 3 to avoid deco peeping out of the platform
+		local isTrackOnPlatformLeft = _terminalData.isTrackOnPlatformLeft
+		if logger.isExtendedLog() then
+			if isTrackOnPlatformLeft then
+				result.models[#result.models + 1] = {
+					id = 'icon/green.mdl',
+					slotId = slotId,
+					transf = slotTransf,
+					tag = tag
+				}
+			else
+				result.models[#result.models + 1] = {
+					id = 'icon/red.mdl',
+					slotId = slotId,
+					transf = slotTransf,
+					tag = tag
+				}
+			end
+			local cps = _terminalData.centrePlatformsRelative
+			result.models[#result.models + 1] = {
+				id = 'icon/orange.mdl',
+				slotId = slotId,
+				transf = {
+					1, 0, 0, 0,
+					0, 1, 0, 0,
+					0, 0, 1, 0,
+					cps[1].posTanX2[1][1][1], cps[1].posTanX2[1][1][2], cps[1].posTanX2[1][1][3], 1
+				},
+				tag = tag
+			}
+			result.models[#result.models + 1] = {
+				id = 'icon/blue.mdl',
+				slotId = slotId,
+				transf = {
+					1, 0, 0, 0,
+					0, 1, 0, 0,
+					0, 0, 1, 0,
+					cps[#cps].posTanX2[2][1][1], cps[#cps].posTanX2[2][1][2], cps[#cps].posTanX2[2][1][3], 1
+				},
+				tag = tag
+			}
+		end
+		local isUnderpass = function(t, i)
+			return params.modules[result.mangleId(t, i, _constants.idBases.underpassSlotId)] ~= nil
+			or params.modules[result.mangleId(t, i, _constants.idBases.platformLiftSlotId)] ~= nil
+		end
+		local isOpenLift = function(t, i)
+			return params.modules[result.mangleId(t, i, _constants.idBases.openLiftSlotId)] ~= nil
+		end
+		local isStairs = function(t, i)
+			return (i ~= 1 and params.modules[result.mangleId(t, i-1, _constants.idBases.openStairsUpLeftSlotId)] ~= nil or false)
+			or params.modules[result.mangleId(t, i, _constants.idBases.openStairsUpLeftSlotId)] ~= nil
+			or params.modules[result.mangleId(t, i+1, _constants.idBases.openStairsUpLeftSlotId)] ~= nil
+			or (i ~= 1 and params.modules[result.mangleId(t, i-1, _constants.idBases.openStairsUpRightSlotId)] ~= nil or false)
+			or params.modules[result.mangleId(t, i, _constants.idBases.openStairsUpRightSlotId)] ~= nil
+			or params.modules[result.mangleId(t, i+1, _constants.idBases.openStairsUpRightSlotId)] ~= nil
+		end
+		local isTunnelStairs = function(t, i)
+			return params.modules[result.mangleId(t, i, _constants.idBases.tunnelStairsUpSlotId)] ~= nil
+			or params.modules[result.mangleId(t, i, _constants.idBases.tunnelStairsUpDownSlotId)] ~= nil
+		end
+		local isPlatformRoofOrWall = function(t, i)
+			return params.modules[result.mangleId(t, i, _constants.idBases.platformRoofSlotId)] ~= nil
+			or params.modules[result.mangleId(t, i, _constants.idBases.platformWallSlotId)] ~= nil
+			or params.modules[result.mangleId(t, i+1, _constants.idBases.platformRoofSlotId)] ~= nil
+			or params.modules[result.mangleId(t, i+1, _constants.idBases.platformWallSlotId)] ~= nil
+			or (i ~= 1 and params.modules[result.mangleId(t, i-1, _constants.idBases.platformRoofSlotId)] ~= nil or false)
+			or (i ~= 1 and params.modules[result.mangleId(t, i-1, _constants.idBases.platformWallSlotId)] ~= nil or false)
+		end
+		local isUnderpass_indexed = {}
+		local isOpenLift_indexed = {}
+		local isStairs_indexed = {}
+		local isTunnelStairs_indexed = {}
+		for i = 1, #_terminalData.centrePlatformsRelative, 1 do
+			isUnderpass_indexed[i] = isUnderpass(nTerminal, i)
+			isOpenLift_indexed[i] = isOpenLift(nTerminal, i)
+			isStairs_indexed[i] = isStairs(nTerminal, i)
+			isTunnelStairs_indexed[i] = isTunnelStairs(nTerminal, i)
+		end
+
+		local xShift = 1
+		local transfXZoom = isTrackOnPlatformLeft and -1 or 1
+		local transfYZoom = isTrackOnPlatformLeft and -1 or 1
+
+		local era_c_subwayLightModelIds = {
+			'subway/roof_edge_w_light_5m_2m_fluo_green.mdl',
+			'subway/roof_edge_w_light_5m_2m_fluo_magenta.mdl',
+			'subway/roof_edge_w_light_5m_2m_fluo_yellow.mdl',
+		}
+		local era_c_centreModelIds = {
+			'asset/era_c_two_chairs.mdl',
+			'station/rail/asset/era_c_trashcan.mdl',
+			'asset/era_c_two_chairs.mdl',
+		}
+
+		local _era_c_belly_5m_2m_modelId = 'bridge_station/belly_5m_2m.mdl'
+		local _era_c_belly_2_5m_2m_modelId = 'bridge_station/belly_2_5m_2m.mdl'
+
+		local _era_c_belly_5m_1m_modelId = 'bridge_station/belly_5m_1m.mdl'
+		local _era_c_belly_2_5m_1m_modelId = 'bridge_station/belly_2_5m_1m.mdl'
+
+		local _eraPrefix = moduleHelpers.getEraPrefix2(params, nTerminal, _terminalData, 1)
+		local tunnelStationSignModelId = 'subway/roof_edge_w_station_name_5m_2m.mdl'
+		local stationSignModelId = 'asset/era_c_station_sign.mdl'
+		local tunnelNumberSignModelId = 'subway/era_c_perron_number_hanging.mdl'
+		local numberSignModelId = 'asset/era_c_perron_number.mdl'
+
+		local belly_5m_2m_modelId = _era_c_belly_5m_2m_modelId
+		local belly_2_5m_2m_modelId = _era_c_belly_2_5m_2m_modelId
+		local belly_5m_1m_modelId = _era_c_belly_5m_1m_modelId
+		local belly_2_5m_1m_modelId = _era_c_belly_2_5m_1m_modelId
+
+
+		local cpfM1 = nil
+		local _maxII = #_cpfs
+		local _maxII_M1 = _maxII - 1
+		for ii = 1, _maxII, 2 do
+			local cpf = _cpfs[ii]
+            if cpf.type == 1 then -- belly to cover pedestrian paths (only on bridges)
+				if (ii < _maxII_M1) then
+					-- The model is 2 m long,
+					-- the last segment can be shorter than 1 m
+					-- and _maxII can be odd or even.
+					-- => we use 1 m models for the last 1 or 2 (_maxII odd or even) belly bits.
+					local myModelId = cpf.width < 5 and belly_2_5m_2m_modelId or belly_5m_2m_modelId
+					local myTransf = transfUtils.getTransf_Scaled_Shifted(
+						moduleHelpers.getPlatformObjectTransf_WithYRotation(cpf.posTanX2),
+						{ transfXZoom, transfYZoom, 1}, -- rotate around z if isTrackOnPlatformLeft
+						{ 0.5, 0, 0} -- add 0.5 coz we go in step 2 and this model is centred on x
+					)
+					-- local yShift = 0
+					result.models[#result.models + 1] = {
+						id = myModelId,
+						slotId = slotId,
+						-- transf = transfUtilsUG.mul(
+						-- 	moduleHelpers.getPlatformObjectTransf_WithYRotation(cpf.posTanX2),
+						-- 	{ transfXZoom, 0, 0, 0,  0, transfYZoom, 0, 0,  0, 0, 1, 0,  0, yShift, 1.0, 1 }
+						-- ),
+						transf = myTransf,
+						tag = tag
+					}
+				else -- ii might be maxII_M1 or maxII; either case, it only comes here once, at the end of the platform
+					for ii_end = ii, _maxII, 1 do
+						local cpf_end = _cpfs[ii_end]
+						if cpf_end.type == 1 then -- only on bridges
+							local myModelId = cpf_end.width < 5 and belly_2_5m_1m_modelId or belly_5m_1m_modelId -- pick a 1 m model
+							local myTransf = transfUtils.getTransf_Scaled(
+								moduleHelpers.getPlatformObjectTransf_WithYRotation(cpf_end.posTanX2),
+								{ transfXZoom, transfYZoom, 1} -- rotate around z if isTrackOnPlatformLeft
+							)
+							result.models[#result.models + 1] = {
+								id = myModelId,
+								slotId = slotId,
+								transf = myTransf,
+								tag = tag
+							}
+						end
+					end
+				end
+			elseif cpf.type == 2 then -- tunnel lights
+				if cpfM1 ~= nil and cpfM1.type == 2 then -- no tunnel lights near tunnel entrances, so they don't get out by rounding accident
+					if (cpf.width >= 5 and _eraPrefix == moduleHelpers.eras.era_c.prefix)
+					or not(isTunnelStairs_indexed[cpf.leadingIndex]) then
+						local yShift = 0
+						if cpf.width >= 5 then
+							yShift = isTrackOnPlatformLeft and 0.12 or -0.12
+						else
+							yShift = isTrackOnPlatformLeft and 1.37 or -1.37
+						end
+						-- local myTransf = transfUtilsUG.mul(
+						-- 	moduleHelpers.getPlatformObjectTransf_WithYRotation(cpf.posTanX2),
+						-- 	{ transfXZoom, 0, 0, 0,  0, transfYZoom, 0, 0,  0, 0, 1, 0,  0, yShift, 1.0, 1 }
+						-- )
+						local myTransf = transfUtils.getTransf_Scaled_Shifted(
+							moduleHelpers.getPlatformObjectTransf_WithYRotation(cpf.posTanX2),
+							{ transfXZoom, transfYZoom, 1}, -- rotate around z if isTrackOnPlatformLeft
+							{ 0, yShift, 1}
+						)
+						local tunnelLightsModelId = era_c_subwayLightModelIds[math.random(#era_c_subwayLightModelIds)]
+
+						result.models[#result.models + 1] = {
+							id = tunnelLightsModelId,
+							slotId = slotId,
+							transf = myTransf,
+							tag = tag
+						}
+					end
+				end
+			end
+			cpfM1 = cpf
+		end
+		-- station name signs
+		for ii, _ in pairs(moduleHelpers.deco.getStationSignFineIndexes(params, nTerminal, _terminalData)) do
+		-- for i = 3, #_terminalData.centrePlatformsRelative - 1, 6 do
+			-- local cpl = _terminalData.centrePlatformsRelative[ii]
+			local cpf = _cpfs[ii]
+			local platformWidth = cpf.width
+			if cpf.type == 2 then -- tunnel
+				if cpf.width >= 5 or not(isTunnelStairs_indexed[cpf.leadingIndex]) then
+					local yShift = 0
+					if cpf.width >= 5 then
+						yShift = isTrackOnPlatformLeft and 0.22 or -0.22
+					else
+						yShift = isTrackOnPlatformLeft and 1.47 or -1.47
+					end
+
+					-- local myTransf = transfUtilsUG.mul(
+					-- 	moduleHelpers.getPlatformObjectTransf_WithYRotation(cpf.posTanX2),
+					-- 	{ transfXZoom, 0, 0, 0,  0, transfYZoom, 0, 0,  0, 0, 1, 0,  0, yShift, 0.5, 1 }
+					-- )
+					local myTransf = transfUtils.getTransf_Scaled_Shifted(
+						moduleHelpers.getPlatformObjectTransf_WithYRotation(cpf.posTanX2),
+						{ transfXZoom, transfYZoom, 1}, -- rotate around z if isTrackOnPlatformLeft
+						{ 0, yShift, 0.5}
+					)
+					result.models[#result.models + 1] = {
+						id = tunnelStationSignModelId,
+						slotId = slotId,
+						transf = myTransf,
+						tag = tag
+					}
+				end
+			elseif platformWidth > 4
+			or (not(isUnderpass_indexed[cpf.leadingIndex]) and not(isOpenLift_indexed[cpf.leadingIndex]) and not(isStairs_indexed[cpf.leadingIndex]))
+			then
+				local transf = moduleHelpers.getTerminalDecoTransf(cpf.posTanX2)
+				-- near the track
+				-- local yShift = isTrackOnPlatformLeft and platformWidth * 0.5 + 0.25 or -platformWidth * 0.5 - 0.25
+				-- 1.5 m from the track
+				-- local yShift = isTrackOnPlatformLeft and platformWidth * 0.5 - 0.75 or -platformWidth * 0.5 + 0.75
+				-- sign 4.8 m or 2.3 m from the track
+				-- local yShift = isTrackOnPlatformLeft and - platformWidth * 0.5 + 0.25 or platformWidth * 0.5 - 0.25
+				-- very far from the track
+				local yShift = isTrackOnPlatformLeft and (-platformWidth * 0.5 + 0.5) or (platformWidth * 0.5 - 0.5)
+				-- result.models[#result.models + 1] = {
+				-- 	id = stationSignModelId,
+				-- 	slotId = slotId,
+				-- 	transf = transfUtils.getTransf_Shifted(transf, {xShift + 2, yShift, laneZ}),
+				-- 	tag = tag
+				-- }
+				result.models[#result.models + 1] = {
+					id = stationSignModelId,
+					slotId = slotId,
+					transf = transfUtils.getTransf_Scaled_Shifted(
+						moduleHelpers.getTerminalDecoTransf(cpf.posTanX2),
+						{ transfXZoom, transfYZoom, 1}, -- rotate around z if isTrackOnPlatformLeft
+						{ xShift, yShift, laneZ}
+					),
+					tag = tag
+				}
+			end
+		end
+		-- platform number signs
+		-- for i = 4, #_terminalData.centrePlatformsRelative - 1, 6 do
+		for ii = 3 + math.floor(_constants.maxPassengerWaitingAreaEdgeLength / 2), _maxII - 2, _constants.maxPassengerWaitingAreaEdgeLength * 6 do
+			local cpf = _cpfs[ii]
+			local platformWidth = cpf.width
+			if cpf.type == 2 then -- tunnel
+				if cpf.width >= 5 or not(isTunnelStairs_indexed[cpf.leadingIndex]) then
+					-- local yShift = isTrackOnPlatformLeft and platformWidth * 0.5 - 0.05 or -platformWidth * 0.5 + 0.05
+					local yShift = isTrackOnPlatformLeft and platformWidth * 0.2 + 0.9 or -platformWidth * 0.2 - 0.9
+					result.models[#result.models + 1] = {
+						id = tunnelNumberSignModelId,
+						slotId = slotId,
+						-- transf = transfUtilsUG.mul(
+						-- 	moduleHelpers.getTerminalDecoTransf(cpf.posTanX2),
+						-- 	{ -transfXZoom, 0, 0, 0,  0, -transfYZoom, 0, 0,  0, 0, 1, 0,  xShift, yShift, 4.6, 1 }
+						-- ),
+						transf = transfUtils.getTransf_Scaled_Shifted(
+							moduleHelpers.getTerminalDecoTransf(cpf.posTanX2),
+							{ -transfXZoom, -transfYZoom, 1}, -- rotate around z if isTrackOnPlatformLeft
+							{ xShift, yShift, 4.6}
+						),
+						tag = tag
+					}
+					-- the model index must be in base 0 !
+					result.labelText[#result.models - 1] = { tostring(nTerminal), tostring(nTerminal) }
+				end
+			else
+				if not(isPlatformRoofOrWall(nTerminal, cpf.leadingIndex))
+				and (platformWidth > 4 or (not(isUnderpass_indexed[cpf.leadingIndex])
+				and not(isOpenLift_indexed[cpf.leadingIndex])
+				and not(isStairs_indexed[cpf.leadingIndex]))) then
+					-- very close to the track
+					-- local yShift = isTrackOnPlatformLeft and platformWidth * 0.5 + 0.25 or -platformWidth * 0.5 - 0.25
+					-- 1.5 m from the track and facing outwards
+					-- local yShift = isTrackOnPlatformLeft and (platformWidth * 0.5 - 0.75) or (-platformWidth * 0.5 + 0.75)
+					-- very far from the track and facing outwards
+					local yShift = isTrackOnPlatformLeft and (-platformWidth * 0.5 + 0.5) or (platformWidth * 0.5 - 0.5)
+					result.models[#result.models + 1] = {
+						id = numberSignModelId,
+						slotId = slotId,
+						transf = transfUtils.getTransf_Scaled_Shifted(
+							moduleHelpers.getTerminalDecoTransf(cpf.posTanX2),
+							{ transfXZoom, transfYZoom, 1}, -- rotate around z if isTrackOnPlatformLeft
+							{ xShift, yShift, laneZ}
+						),
+						tag = tag
+					}
+					result.labelText[#result.models - 1] = { tostring(nTerminal), tostring(nTerminal) }
+				end
+			end
+		end
+		-- arrivals and departure tables
+		for i = 2, #_terminalData.centrePlatformsRelative - 1, 3 do
+			if not(isUnderpass_indexed[i]) and not(isOpenLift_indexed[i]) and not(isStairs_indexed[i]) and not(isTunnelStairs_indexed[i]) then
+				local cpl = _terminalData.centrePlatformsRelative[i]
+				local platformWidth = cpl.width
+				local yShift = isTrackOnPlatformLeft and platformWidth * 0.2 + 0.1 or -platformWidth * 0.2 - 0.1
+				-- local transf = moduleHelpers.getTerminalDecoTransf(cpl.posTanX2)
+				local transf = moduleHelpers.getPlatformObjectTransf_AlwaysVertical(cpl.posTanX2)
+				result.models[#result.models + 1] = {
+					id = 'asset/arrivi.mdl',
+					slotId = slotId,
+					transf = transfUtils.getTransf_Shifted(transf, {-0.1 + xShift, yShift, laneZ}),
+					tag = tag
+				}
+				result.models[#result.models + 1] = {
+					id = 'asset/partenze.mdl',
+					slotId = slotId,
+					transf = transfUtils.getTransf_Shifted(transf, {-1.4 + xShift, yShift, laneZ}),
+					tag = tag
+				}
+			end
+		end
+		-- chairs, rubbish bins etc
+		for i = 2, #_terminalData.centrePlatformsRelative - 1, 1 do
+			if not(isUnderpass_indexed[i]) and not(isOpenLift_indexed[i]) and not(isStairs_indexed[i]) and not(isTunnelStairs_indexed[i]) then
+				local cpl = _terminalData.centrePlatformsRelative[i]
+				local platformWidth = cpl.width
+
+				local transf = moduleHelpers.getPlatformObjectTransf_AlwaysVertical(cpl.posTanX2)
+				local myModelId = era_c_centreModelIds[math.random(#era_c_centreModelIds)]
+
+				local yShift = isTrackOnPlatformLeft and platformWidth * 0.2 + 0.1 or -platformWidth * 0.2 - 0.1
+				result.models[#result.models + 1] = {
+					id = myModelId,
+					slotId = slotId,
+					transf = transfUtilsUG.mul(transf, { 0, transfYZoom, 0, 0,  transfXZoom, 0, 0, 0,  0, 0, 1, 0,  1.8 + xShift, yShift, laneZ, 1 }),
+					tag = tag
+				}
+			end
+		end
+
+		-- logger.print('passengerTerminal.module.updateFn ending')
+	end,
+
+	getModelsFn = function(params)
+		return {
+			{
+				id = _constants.terminalModelFileName,
+				transf = _constants.idTransf,
+			},
+		}
+	end
+}
+
+end
