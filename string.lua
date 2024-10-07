@@ -64,6 +64,7 @@ function data()
             ["OpenStairsExitWithSnappyEdgeName_2m"] = "Entrée des escaliers, court",
 
             ["OpenLiftName_OLD"] = "Ascenceur pour plateforme en hauteur",
+            ["OpenLift_NoAutoLinkName"] = "Ascenceur pour plateforme en hauteur (manuel)",
         }
     }
 end
