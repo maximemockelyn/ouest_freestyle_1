@@ -113,14 +113,14 @@ local constants = {
             openStairs = 'station/rail/openStairs/openStairsExitWithFakeEdge_2m_v2.module'
         },
         plain = {
-            axialArea = 'station/rail/ouest_train_station/axialAreas/flatPassengerStairsEdge.module',
-            flatArea = 'station/rail/ouest_train_station/flatAreas/flatPassengerStairsEdge.module',
-            openStairs = 'station/rail/ouest_train_station/openStairs/openStairsExitWithEdge_2m_v2.module'
+            axialArea = 'station/rail/axialAreas/flatPassengerStairsEdge.module',
+            flatArea = 'station/rail/flatAreas/flatPassengerStairsEdge.module',
+            openStairs = 'station/rail/openStairs/openStairsExitWithEdge_2m_v2.module'
         },
         snappy = {
-            axialArea = 'station/rail/ouest_train_station/axialAreas/flatPassengerStairsSnappyEdge.module',
-            flatArea = 'station/rail/ouest_train_station/flatAreas/flatPassengerStairsSnappyEdge.module',
-            openStairs = 'station/rail/ouest_train_station/openStairs/openStairsExitWithSnappyEdge_2m_v2.module'
+            axialArea = 'station/rail/axialAreas/flatPassengerStairsSnappyEdge.module',
+            flatArea = 'station/rail/flatAreas/flatPassengerStairsSnappyEdge.module',
+            openStairs = 'station/rail/openStairs/openStairsExitWithSnappyEdge_2m_v2.module'
         },
     },
 
