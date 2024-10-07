@@ -56,7 +56,12 @@ function data()
             ["AxialPassengerStairsSnappyEdgeName"] = "Entrée en bout de quai avec pont automatique",
             ["FlatPassengerStairsSnappyEdgeName"] = "Entrée côté plate-forme avec pont automatique",
             ["OpenStairsExitWithSnappyEdgeName_2m"] = "Entrée des escaliers avec pont automatique",
-            ["AxialPassengerStairsEdgeName"] = "Entrée de par bout de quai pont automatique",
+            ["AxialPassengerStairsEdgeName"] = "Entrée par bout de quai pont automatique",
+            ["FlatPassengerStairsEdgeName"] = "Entrée de quai pont automatique",
+            ["OpenStairsExitWithEdgeName_2m"] = "Entrée des escaliers, court",
+            ["AxialPassengerStairsSnappyEdgeName"] = "Entrée à l'extrémité de quai avec pont automatique",
+            ["FlatPassengerStairsSnappyEdgeName"] = "Entrée de quai pont automatique",
+            ["OpenStairsExitWithSnappyEdgeName_2m"] = "Entrée des escaliers, court",
         }
     }
 end
