@@ -70,6 +70,8 @@ function data()
             ["OpenStairsUpLeft_NoAutoLinkName"] = "Escalier gauche pour plateforme (manuel)",
             ["OpenStairsUpRightName"] = "Escalier droit pour plateforme",
             ["OpenStairsUpRight_NoAutoLinkName"] = "Escalier droit pour plateforme (manuel)",
+
+            ["RestorePassengerTerminalName"] = "Restauration du terminal passager"
         }
     }
 end
