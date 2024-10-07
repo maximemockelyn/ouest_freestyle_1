@@ -1,0 +1,51 @@
+local _constants = require('ouest_freestyle_station.constants')
+local logger = require('ouest_freestyle_station.logger')
+local transfUtils = require('ouest_freestyle_station.transfUtils')
+
+
+function data()
+	return {
+		availability = {
+			yearFrom = 0,
+			yearTo = 0
+		},
+		category = {
+			categories = { "restore-terminal", },
+		},
+		cost = {
+			price = 0,
+		},
+		description = {
+			name = _("RestorePassengerTerminalName"),
+			-- description = _("RestoreTerminalDesc"),
+			icon = 'ui/restorePassengerTerminal.tga',
+		},
+		metadata = { },
+		order = {
+			value = 1,
+		},
+		type = _constants.restorePassengerTerminalModuleType,
+		updateFn = function(result, slotTransf, tag, slotId, addModelFn, params, updateScriptParams)
+			local nTerminal, nTrackEdge, baseId = result.demangleId(slotId)
+			if not nTerminal or not baseId then return end
+
+			result.models[#result.models + 1] = {
+				-- id = _constants.terminalModelFileName,
+				id = 'icon/green.mdl',
+				slotId = slotId,
+				transf = slotTransf,
+				tag = tag
+			}
+		end,
+
+		getModelsFn = function(params)
+			return {
+				{
+					-- id = _constants.terminalModelFileName,
+					id = 'icon/green.mdl',
+					transf = _constants.idTransf,
+				},
+			}
+		end
+	}
+end
