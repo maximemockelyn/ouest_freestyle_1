@@ -67,6 +67,7 @@ function data()
             ["OpenLift_NoAutoLinkName"] = "Ascenceur pour plateforme en hauteur (manuel)",
 
             ["OpenStairsUpLeftName"] = "Escalier gauche pour plateforme",
+            ["OpenStairsUpLeft_NoAutoLinkName"] = "Escalier gauche pour plateforme (manuel)",
         }
     }
 end
