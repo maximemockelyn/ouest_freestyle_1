@@ -1,0 +1,42 @@
+local _constants = require('ouest_freestyle_station.constants')
+local moduleHelpers = require('ouest_freestyle_station.moduleHelpers')
+local transfUtils = require('ouest_freestyle_station.transfUtils')
+local transfUtilsUG = require "transf"
+
+
+function data()
+    return {
+        availability = {
+            yearFrom = 0,
+            yearTo = 0
+        },
+        category = {
+            categories = { "passenger-up-and-down", },
+        },
+        cost = {
+            price = 0,
+        },
+        description = {
+            name = _("OpenLift_NoAutoLinkName"),
+            -- description = _("OpenLift_NoAutoLinkDesc"),
+            icon = "ui/openLift_NoAutoLink.tga"
+        },
+        metadata = { },
+        order = {
+            value = 75,
+        },
+        type = _constants.openLiftModuleType,
+        updateFn = function(result, slotTransf, tag, slotId, addModelFn, params, updateScriptParams)
+            moduleHelpers.openStairs.openLifts_v2_updateFn(result, slotTransf, tag, slotId, addModelFn, params, updateScriptParams)
+        end,
+
+        getModelsFn = function(params)
+            return {
+                {
+                    id = 'open_lifts/era_c_open_lift_8m.mdl',
+                    transf = _constants.idTransf,
+                },
+            }
+        end
+    }
+end

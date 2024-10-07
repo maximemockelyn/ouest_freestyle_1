@@ -62,6 +62,11 @@ function data()
             ["AxialPassengerStairsSnappyEdgeName"] = "Entrée à l'extrémité de quai avec pont automatique",
             ["FlatPassengerStairsSnappyEdgeName"] = "Entrée de quai pont automatique",
             ["OpenStairsExitWithSnappyEdgeName_2m"] = "Entrée des escaliers, court",
+
+            ["OpenLiftName_OLD"] = "Ascenceur pour plateforme en hauteur",
+            ["OpenLift_NoAutoLinkName"] = "Ascenceur pour plateforme en hauteur (manuel)",
+
+            ["OpenStairsUpLeftName"] = "Escalier gauche pour plateforme",
         }
     }
 end
