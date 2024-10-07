@@ -173,6 +173,8 @@ local constants = {
     era_c_slopedPassengerArea1x10ModelFileName = 'ouest_train_station/railroad/slopedSides/passengers/area1x10.mdl',
     era_c_slopedPassengerArea1x20ModelFileName = 'ouest_train_station/railroad/slopedSides/passengers/area1x20.mdl',
 
+    era_c_openStairsUpModelId = 'lollo_freestyle_train_station/open_stairs/era_c_open_stairs_up.mdl',
+
     terminalModelFileName = 'ouest_train_station/asset/terminal_signal.mdl',
     fenceWaypointModelId = 'ouest_train_station/railroad/fence_waypoint.mdl',
     platformWaypointModelId = 'ouest_train_station/railroad/platform_waypoint.mdl',
